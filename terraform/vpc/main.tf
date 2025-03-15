@@ -11,5 +11,5 @@
 # Private Subnet - A subnet without direct internet access. Usually, traffic is routed to the internet through a NAT Gateway in a public subnet.
 # Used for sensitive resources like databases or application servers.
 # --- Security Group ---
-# Configure access (firewall rules) on subnet level = NACL
-# Configure access (firewall rules) on instance  level = Security Group
+# Configure access (firewall rules) on subnet level = NACL (default all internal communication is open)
+# Configure access (firewall rules) on instance  level = Security Group (default all close)
