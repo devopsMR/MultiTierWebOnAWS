@@ -30,15 +30,13 @@ variable "min_size" {
   default = 1
 }
 
-variable "private_subnet_ids" {
-  description = "List of private subnets across multiple AZs for the ASG"
+variable "public_subnet_ids" {
+  description = "List of public subnets across multiple AZs for the ASG"
   type        = list(string)
-  default     = ["subnet-abc1", "subnet-abc2"]
 }
 
 variable "vpc_security_group_ids" {
   description = "List of security groups to assign to instances"
   type        = list(string)
-  default     = ["sg-12345"]
 }
 

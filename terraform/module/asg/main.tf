@@ -25,10 +25,13 @@ resource "aws_launch_template" "web_server" {
   instance_type = var.instance_type
   key_name      = aws_key_pair.ssh_key.key_name
 
-  # Specify security groups here
-  vpc_security_group_ids = var.vpc_security_group_ids
   # User data to bootstrap the instance (Base64 encoded)
   user_data = filebase64(var.entery_ec2_script)
+
+  network_interfaces {
+    associate_public_ip_address = true
+    security_groups             = var.vpc_security_group_ids
+  }
 
   tags = {
     Name = "${var.env_prefix}-launch-template"
@@ -37,10 +40,12 @@ resource "aws_launch_template" "web_server" {
 
 # Auto Scaling Group
 resource "aws_autoscaling_group" "web_asg" {
+  name = "${var.env_prefix}-asg"
+
   desired_capacity     = var.desired_capacity
   max_size             = var.max_size
   min_size             = var.min_size
-  vpc_zone_identifier  = var.private_subnet_ids
+  vpc_zone_identifier  = var.public_subnet_ids
 
   # Reference the launch template
   launch_template {
@@ -63,6 +68,15 @@ resource "aws_autoscaling_group" "web_asg" {
     propagate_at_launch = true
   }
 }
+
+data "aws_instances" "web_asg_instances" {
+  depends_on = [aws_autoscaling_group.web_asg]
+  filter {
+   name   = "tag:Name"
+   values = ["${var.env_prefix}-asg-instance"]
+ }
+}
+
 
 # CloudWatch Metric Alarms and Scaling Policies (Optional)
 resource "aws_cloudwatch_metric_alarm" "cpu_high" {

@@ -1,4 +1,14 @@
-output "instance_public_ip" {
-  value = ""                                          # The actual value to be outputted
-  description = "The public IP address of the EC2 instance" # Description of what this output represents
+output "alb_arn" {
+  description = "ARN of the Application Load Balancer"
+  value       = aws_lb.nginx_alb.arn
+}
+
+output "alb_dns_name" {
+  description = "DNS Name of the Application Load Balancer"
+  value       = aws_lb.nginx_alb.dns_name
+}
+
+output "target_group_arn" {
+  description = "ARN of the Target Group"
+  value       = aws_lb_target_group.nginx_target_group.arn
 }

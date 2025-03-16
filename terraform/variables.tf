@@ -46,6 +46,11 @@ variable "entery_ec2_script" {
   type        = string
 }
 
+variable "route53_zone_id" {
+  description = "The ID of the Route 53 Hosted Zone"
+  type        = string
+}
+
 
 
 

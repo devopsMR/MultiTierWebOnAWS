@@ -11,13 +11,10 @@ module "vpc" {
 
 module "security" {
   source   = "./module/security"
-
   env_prefix = var.env_prefix
-
   vpc_id = module.vpc.vpc_id
 
   # will use default ingress and egress rules as defined in the module’s variables.tf
-
   tags = {
     Environment = var.env_prefix
   }
@@ -26,57 +23,35 @@ module "security" {
 module "asg" {
   source = "./module/asg"
 
-  private_subnet_ids     = module.vpc.private_subnet_ids
+  public_subnet_ids = module.vpc.public_subnet_ids
   vpc_security_group_ids = [module.security.security_group_id]
-
-
-  desired_capacity    = 1
-  max_size            = 3
-  min_size            = 1
+  # will use default for desired_capacity
   instance_type       = "t2.micro"
   public_key_location = var.public_key_location
   entery_ec2_script   = var.entery_ec2_script
   env_prefix          = var.env_prefix
 }
 
+module "alb" {
+  source = "./module/alb"
 
+  vpc_id            = module.vpc.vpc_id
+  public_subnets    = module.vpc.public_subnet_ids
+  security_group_id = module.security.alb_sg_id # Security group created by security module
+  target_group_name = "nginx-target-group"
+  health_check_path = "/"
+  route53_zone_id   = var.route53_zone_id # aws route53 list-hosted-zones
+  route53_record_name = "devops-mr.com"
+  desired_capacity = module.asg.desired_capacity
 
-# data "aws_ami" "latest-amazon-linux-image" {
-#   most_recent = true
-#   owners = ["amazon"]
-#   filter {
-#     name = "name"
-#     values = ["amzn2-ami-kernel-*-x86_64-gp2"]
-#   }
-#   filter {
-#     name = "virtualization-type"
-#     values = ["hvm"]
-#   }
-# }
-#
-# resource "aws_key_pair" "ssh-key" {
-#   key_name = "server-key"
-#   public_key = file(var.public_key_location)
-# }
-#
-# resource "aws_instance" "myapp-instance" {
-#   ami = data.aws_ami.latest-amazon-linux-image.id
-#   instance_type = var.instance_type
-#
-#   subnet_id = aws_subnet.myapp-subnet-1.id
-#   vpc_security_group_ids = [aws_security_group.myapp-sg.id]
-#   # availability_zone = var.avail_zone
-#
-#   associate_public_ip_address = true
-#   key_name = aws_key_pair.ssh-key.key_name
-#
-#   tags = {
-#     Name : "${var.env_prefix}-server"
-#   }
-#
-#   #execute on server creation
-#   user_data = file(var.entery_ec2_script)
-#   user_data_replace_on_change = true
-# }
+}
+
+#replaces aws_lb_target_group_attachment when you're working with an **Auto Scaling Group (ASG)
+
+resource "aws_autoscaling_attachment" "asg_to_alb" {
+  autoscaling_group_name = module.asg.asg_name
+  lb_target_group_arn   = module.alb.target_group_arn
+  #depends_on = [aws_autoscaling_group.web_asg]
+}
 
 # #data "aws_ami" "docker_ami" {}
