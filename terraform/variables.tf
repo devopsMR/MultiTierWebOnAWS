@@ -4,22 +4,27 @@ variable "region" {
   description = "The AWS region where the resources will be created"
 }
 
-variable "env_prefix" {
-  description = "The environment to deploy (e.g., development, staging, production)."
-  type        = string
-}
-
 variable "vpc_cidr_block" {
   type        = string
 }
 
-variable "subnet_cidr_block" {
+variable "env_prefix" {
+  description = "environment dev, test or prod"
   type        = string
 }
 
-variable "avail_zone" {
-  type        = string
-  description = "List of availability zones to use"
+variable "availability_zones" {
+  type        = list(string)
+}
+
+variable "private_subnets" {
+  description = "Must match the number of availability zones."
+  type        = list(string)
+}
+
+variable "public_subnets" {
+  description = "Must match the number of availability zones."
+  type        = list(string)
 }
 
 variable "my_ip" {
@@ -42,24 +47,7 @@ variable "entery_ec2_script" {
 }
 
 
-# variable "private_subnets" {
-#   type        = list(string)
-#   description = "List of private subnet CIDR blocks"
-# }
-#
-# variable "public_subnets" {
-#   type        = list(string)
-#   description = "List of public subnet CIDR blocks"
-# }
-#
-#
-# variable "instance_count" {
-#   type        = number
-#   description = "Number of instances to launch"
-#   default     = 2
-# }
-#
-# variable "instance_tags" {
-#   type        = map(string)
-#   description = "Tags to apply to each instance"
-# }
+
+
+
+
