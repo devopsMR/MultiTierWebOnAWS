@@ -59,3 +59,32 @@ resource "aws_security_group" "alb_sg" {
     var.tags
   )
 }
+
+resource "aws_security_group" "rds_sg" {
+  name        = "${var.env_prefix}-rds-sg"
+  description = "Security group for RDS MySQL"
+  vpc_id      = var.vpc_id
+
+  # Allow MySQL traffic (port 3306) only from allowed EC2 security groups
+  ingress {
+    from_port   = 3306
+    to_port     = 3306
+    protocol    = "tcp"
+    security_groups = var.allowed_security_groups # List of allowed EC2 security group IDs
+  }
+
+  # Outbound traffic (optional, can be restricted further based on needs)
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(
+    {
+      Name = "${var.env_prefix}-rds-sg"
+    },
+    var.tags
+  )
+}

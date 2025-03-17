@@ -43,7 +43,7 @@ resource "aws_lb_listener" "http_listener" {
   }
 }
 
-# (Optional) Route 53 Record to Point to ALB
+# Route 53 Record to Point to ALB
 resource "aws_route53_record" "alias" {
   count = var.route53_zone_id != null && var.route53_record_name != null ? 1 : 0
 
