@@ -43,7 +43,7 @@ module "alb" {
   target_group_name = "nginx-target-group"
   health_check_path = "/"
   route53_zone_id   = var.route53_zone_id # aws route53 list-hosted-zones
-  route53_record_name = "devops-mr.com"
+  route53_record_name = var.route53_record_name
   desired_capacity = module.asg.desired_capacity
 
 }
