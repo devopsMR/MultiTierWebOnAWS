@@ -1,122 +1,57 @@
-resource "aws_vpc" "myapp-vpc" {
-  cidr_block = var.vpc_cidr_block
+module "vpc" {
+  source = "./module/vpc"
+
+  vpc_cidr_block    = var.vpc_cidr_block
+  availability_zones = var.availability_zones
+  private_subnets    = var.private_subnets
+  public_subnets     = var.public_subnets
+
+  env_prefix        = var.env_prefix
+}
+
+module "security" {
+  source   = "./module/security"
+  env_prefix = var.env_prefix
+  vpc_id = module.vpc.vpc_id
+
+  # will use default ingress and egress rules as defined in the module’s variables.tf
   tags = {
-    Name: "${var.env_prefix}-vpc"
+    Environment = var.env_prefix
   }
 }
 
-resource "aws_subnet" "myapp-subnet-1" {
-  vpc_id = aws_vpc.myapp-vpc.id
-  cidr_block = var.subnet_cidr_block
-  availability_zone = var.avail_zone
-  tags = {
-    Name : "${var.env_prefix}-subnet-1"
-  }
+module "asg" {
+  source = "./module/asg"
+
+  public_subnet_ids = module.vpc.public_subnet_ids
+  vpc_security_group_ids = [module.security.security_group_id]
+  # will use default for desired_capacity
+  instance_type       = "t2.micro"
+  public_key_location = var.public_key_location
+  entery_ec2_script   = var.entery_ec2_script
+  env_prefix          = var.env_prefix
 }
 
-resource "aws_internet_gateway" "myapp-igw" {
-  vpc_id = aws_vpc.myapp-vpc.id
+module "alb" {
+  source = "./module/alb"
+
+  vpc_id            = module.vpc.vpc_id
+  public_subnets    = module.vpc.public_subnet_ids
+  security_group_id = module.security.alb_sg_id # Security group created by security module
+  target_group_name = "nginx-target-group"
+  health_check_path = "/"
+  route53_zone_id   = var.route53_zone_id # aws route53 list-hosted-zones
+  route53_record_name = "devops-mr.com"
+  desired_capacity = module.asg.desired_capacity
+
 }
 
-resource "aws_route_table" "myapp-route-table" {
-  vpc_id = aws_vpc.myapp-vpc.id
-  route {
-    cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.myapp-igw.id
-  }
-  tags = {
-    Name : "${var.env_prefix}-rtb"
-  }
+#replaces aws_lb_target_group_attachment when you're working with an **Auto Scaling Group (ASG)
+
+resource "aws_autoscaling_attachment" "asg_to_alb" {
+  autoscaling_group_name = module.asg.asg_name
+  lb_target_group_arn   = module.alb.target_group_arn
+  #depends_on = [aws_autoscaling_group.web_asg]
 }
 
-resource "aws_route_table_association" "myapp-subnet-1-rtb-assoc" {
-  subnet_id = aws_subnet.myapp-subnet-1.id
-  route_table_id = aws_route_table.myapp-route-table.id
-}
-
-
-#  -- Use Default Route Table When all subnets share the same routing rules. --
-# data "aws_route_table" "default" {
-#  vpc_id = aws_vpc.myapp-vpc.id
-# }
-#
-# resource "aws_default_route_table" "main-rtb" {
-#   default_route_table_id = data.aws_route_table.default.id
-#   route {
-#     cidr_block = "0.0.0.0/0"
-#     gateway_id = aws_internet_gateway.myapp-igw.id
-#   }
-#   tags = {
-#     Name : "${var.env_prefix}-rtb"
-#   }
-# }
-
-resource "aws_security_group" "myapp-sg" {
-  name = "myapp-sg"
-  vpc_id = aws_vpc.myapp-vpc.id
-  #ingress = incoming traffic **to a resource
-  ingress {
-    from_port = 80 # browser
-    to_port = 80
-    protocol = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-  ingress {
-    from_port = 22 #SSH
-    to_port = 22
-    protocol = "TCP"
-    cidr_blocks = ["0.0.0.0/0"]
-    #cidr_blocks = [var.my_ip]
-  }
-  #egress = outgoing traffic from a resource
-  egress {
-   from_port = 0
-   to_port = 0
-   protocol = "-1"
-   cidr_blocks = ["0.0.0.0/0"]
-    prefix_list_ids = []
-  }
-  tags = {
-    Name : "${var.env_prefix}-sg"
-  }
-}
-
-data "aws_ami" "latest-amazon-linux-image" {
-  most_recent = true
-  owners = ["amazon"]
-  filter {
-    name = "name"
-    values = ["amzn2-ami-kernel-*-x86_64-gp2"]
-  }
-  filter {
-    name = "virtualization-type"
-    values = ["hvm"]
-  }
-}
-
-resource "aws_key_pair" "ssh-key" {
-  key_name = "server-key"
-  public_key = file(var.public_key_location)
-}
-
-resource "aws_instance" "myapp-instance" {
-  ami = data.aws_ami.latest-amazon-linux-image.id
-  instance_type = var.instance_type
-
-  subnet_id = aws_subnet.myapp-subnet-1.id
-  vpc_security_group_ids = [aws_security_group.myapp-sg.id]
-  # availability_zone = var.avail_zone
-
-  associate_public_ip_address = true
-  key_name = aws_key_pair.ssh-key.key_name
-
-  tags = {
-    Name : "${var.env_prefix}-server"
-  }
-
-  #execute on server creation
-  user_data = file(var.entery_ec2_script)
-  user_data_replace_on_change = true
-}
-
-#data "aws_ami" "docker_ami" {}
+# #data "aws_ami" "docker_ami" {}
