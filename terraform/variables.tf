@@ -51,6 +51,12 @@ variable "route53_zone_id" {
   type        = string
 }
 
+variable "skip_final_snapshot" {
+  type        = bool
+  default     = false
+}
+
+
 
 
 

@@ -56,3 +56,8 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "allowed_security_groups" {
+  description = "IDs of security groups allowed to connect to RDS (e.g., EC2 instance security groups)"
+  type        = list(string)
+}
