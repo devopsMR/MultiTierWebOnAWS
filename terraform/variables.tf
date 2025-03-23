@@ -60,6 +60,23 @@ variable "skip_final_snapshot" {
 }
 
 
+# variable "bucket_name" {
+#   description = "Bucket name suffix"
+#   type        = string
+# }
+#
+# variable "upload_file" {
+#   description = "Path to the file to be uploaded with KMS encryption"
+#   type        = string
+# }
+#
+# variable "user_group_name" {
+#   description = "The IAM user group to grant access to the KMS key"
+#   type        = string
+# }
+
+
+
 
 
 

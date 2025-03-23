@@ -12,3 +12,7 @@ output "rds_sg_id" {
   description = "ID of the RDS security group"
   value       = aws_security_group.rds_sg.id
 }
+
+output "opensearch_sg_id" {
+  value = aws_security_group.opensearch_sg.id
+}

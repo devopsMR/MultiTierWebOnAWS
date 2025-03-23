@@ -61,3 +61,30 @@ variable "allowed_security_groups" {
   description = "IDs of security groups allowed to connect to RDS (e.g., EC2 instance security groups)"
   type        = list(string)
 }
+
+variable "public_subnet_ids" {
+  description = "List of public subnet IDs"
+  type        = list(string)
+}
+
+variable "private_subnet_ids" {
+  description = "List of private subnet IDs"
+  type        = list(string)
+}
+
+variable "public_subnets" {
+  description = "Must match the number of availability zones."
+  type        = list(string)
+}
+
+variable "private_subnets" {
+  description = "Must match the number of availability zones."
+  type        = list(string)
+}
+
+variable "my_ip" {
+  type        = string
+  description = "IP address of the machine running terraform"
+}
+
+
